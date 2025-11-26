@@ -8,28 +8,24 @@ class UtilizadorModel extends Model
 {
     protected $table            = 'Utilizadores';
     protected $primaryKey       = 'id';
-    protected $useAutoIncrement = true;
+    protected $allowedFields    = ['nome', 'email', 'senha', 'tipo', 'status']; // Adicionado status
     protected $returnType       = 'array';
-    protected $allowedFields    = ['nome', 'email', 'senha', 'tipo'];
 
-    // Validation
+    // Regras de validação
     protected $validationRules = [
         'nome'  => 'required|min_length[3]|max_length[100]',
         'email' => 'required|valid_email|is_unique[Utilizadores.email]',
         'senha' => 'required|min_length[6]',
-        'tipo'  => 'required|in_list[administrador,morador]',
+        'tipo'  => 'required|in_list[admin,gestor,morador]',
     ];
 
     protected $validationMessages = [
-        'email' => [
-            'is_unique' => 'Este email já se encontra registado na nossa base de dados.'
-        ]
+        'email' => ['is_unique' => 'Este email já está registado.']
     ];
 
-    // Callbacks
-    protected $allowCallbacks = true;
-    protected $beforeInsert   = ['hashPassword'];
-    protected $beforeUpdate   = ['hashPassword'];
+    // Encriptar senha automaticamente
+    protected $beforeInsert = ['hashPassword'];
+    protected $beforeUpdate = ['hashPassword'];
 
     protected function hashPassword(array $data)
     {

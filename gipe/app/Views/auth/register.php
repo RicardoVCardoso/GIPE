@@ -44,13 +44,17 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label">Tipo de Conta</label>
-                            <select name="tipo" class="form-select">
-                                <option value="morador" <?= set_select('tipo', 'morador', true) ?>>Morador</option>
-                                <option value="administrador" <?= set_select('tipo', 'administrador') ?>>Administrador</option>
-                            </select>
-                        </div>
+      <div class="mb-4">
+    <label class="form-label fw-bold text-muted small text-uppercase">Tipo de Conta</label>
+    <select name="tipo" class="form-select bg-light border-0 py-2" required>
+        <option value="" selected disabled>Selecione o seu perfil...</option>
+        <option value="morador">Morador (Residente)</option>
+        <option value="gestor">Gestor de Condomínio</option>
+        </select>
+    <div class="form-text text-muted small mt-2">
+        <i class="fa-solid fa-circle-info me-1"></i> A sua conta ficará pendente até aprovação.
+    </div>
+</div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Registar</button>
