@@ -5,8 +5,6 @@
     $tipo = session()->get('tipo'); 
     $canManage = ($tipo === 'admin' || $tipo === 'gestor');
     if ($route === 'ocorrencias' && $tipo === 'morador') $canManage = true; 
-    
-    // Contar itens no lixo para mostrar no botão
     $trashCount = isset($trashData) ? count($trashData) : 0;
 ?>
 
@@ -42,7 +40,8 @@
             <table class="table table-hover align-middle w-100 mb-0 datatable">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4 py-3 text-uppercase text-muted small fw-bold">ID</th>
+                        <th class="ps-4 py-3 text-uppercase text-muted small fw-bold" style="width: 50px;">N.º</th>
+                        
                         <?php foreach($columns as $key => $label): ?>
                             <th class="py-3 text-uppercase text-muted small fw-bold"><?= $label ?></th>
                         <?php endforeach; ?>
@@ -50,16 +49,21 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <?php $counter = 1; ?>
                     <?php foreach($data as $row): ?>
                     <tr>
-                        <td class="ps-4 fw-bold text-secondary">#<?= $row['id'] ?></td>
+                        <td class="ps-4 fw-bold text-secondary">
+                            <?= $counter++ ?>
+                            <small class="text-muted opacity-25 fw-light ms-1" style="font-size: 0.7em;">#<?= $row['id'] ?></small>
+                        </td>
+
                         <?php foreach($columns as $key => $label): ?>
                             <td>
                                 <?php 
                                     $val = esc($row[$key] ?? '-');
                                     if ($key == 'status' || $key == 'lida'): 
                                         $badgeClass = 'bg-secondary';
-                                        if(in_array($val, ['ativo', 'paga', 'resolvida', '1'])) $badgeClass = 'bg-success';
+                                        if(in_array($val, ['ativo', 'paga', 'pago', 'resolvida', '1', 'concluida'])) $badgeClass = 'bg-success';
                                         if(in_array($val, ['pendente', '0'])) $badgeClass = 'bg-warning text-dark';
                                         if(in_array($val, ['bloqueado', 'rejeitada'])) $badgeClass = 'bg-danger';
                                         echo "<span class='badge {$badgeClass} bg-opacity-75 rounded-pill px-3'>".strtoupper($val)."</span>";
@@ -71,15 +75,26 @@
                         <?php if($canManage): ?>
                         <td class="text-end pe-4">
                             <div class="d-flex justify-content-end gap-2">
-                                <?php if(isset($row['status']) && $row['status'] === 'pendente'): ?>
-                                    <a href="<?= base_url($route.'/status/'.$row['id'].'/ativo') ?>" class="btn btn-sm btn-success text-white"><i class="fa-solid fa-check"></i></a>
+                                
+                                <?php if(isset($row['status']) && $row['status'] === 'pendente' && $route === 'utilizadores'): ?>
+                                    <a href="<?= base_url($route.'/status/'.$row['id'].'/ativo') ?>" class="btn btn-sm btn-success text-white" title="Aprovar Registo">
+                                        <i class="fa-solid fa-check"></i>
+                                    </a>
+                                <?php endif; ?>
+
+                                <?php if(isset($row['status']) && $row['status'] !== 'pago' && $route === 'pagamentos'): ?>
+                                    <a href="<?= base_url($route.'/status/'.$row['id'].'/pago') ?>" class="btn btn-sm btn-success text-white shadow-sm" title="Confirmar Pagamento">
+                                        <i class="fa-solid fa-money-bill-wave"></i>
+                                    </a>
                                 <?php endif; ?>
                                 
-                                <a href="<?= base_url($route . '/edit/' . $row['id']) ?>" class="btn btn-sm btn-light text-primary border"><i class="fa-solid fa-pen"></i></a>
+                                <a href="<?= base_url($route . '/edit/' . $row['id']) ?>" class="btn btn-sm btn-light text-primary border" title="Editar">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
                                 
                                 <?php if($tipo !== 'morador'): ?>
-                                    <button class="btn btn-sm btn-light text-danger border" onclick="confirmDelete('<?= base_url($route) ?>', <?= $row['id'] ?>)">
-                                        <i class="fa-solid fa-trash-can"></i>
+                                    <button class="btn btn-sm btn-light text-danger border" onclick="confirmDelete('<?= base_url($route) ?>', <?= $row['id'] ?>)" title="Arquivar">
+                                        <i class="fa-solid fa-box-archive"></i>
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -97,7 +112,7 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
             <div class="modal-header bg-danger bg-opacity-10 border-bottom-0 py-3">
-                <h5 class="modal-title text-danger fw-bold"><i class="fa-solid fa-box-archive me-2"></i> Arquivo de <?= $title ?></h5>
+                <h5 class="modal-title text-danger fw-bold"><i class="fa-solid fa-trash-can me-2"></i> Arquivo de <?= $title ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-0 bg-light">
@@ -111,9 +126,9 @@
                         <table class="table table-hover align-middle w-100 mb-0">
                             <thead class="bg-white sticky-top">
                                 <tr>
-                                    <th class="ps-4">ID</th>
+                                    <th class="ps-4">ID Original</th>
                                     <?php foreach($columns as $label): ?><th><?= $label ?></th><?php endforeach; ?>
-                                    <th class="text-end pe-4">Recuperar / Eliminar</th>
+                                    <th class="text-end pe-4">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -149,7 +164,7 @@
 function confirmDelete(baseUrl, id) {
     Swal.fire({
         title: 'Arquivar Registo?',
-        text: "O item será movido para o Arquivo e deixará de estar visível.",
+        text: "O item será movido para o Arquivo.",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#f59e0b',

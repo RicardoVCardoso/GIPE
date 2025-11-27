@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\UtilizadorModel;
+use Config\Services; // <--- 1. IMPORTANTE: Importar os serviços
 
 class Auth extends BaseController
 {
@@ -74,8 +75,12 @@ class Auth extends BaseController
             'tipo' => 'required|in_list[gestor,morador]' // PROIBIDO REGISTAR COMO ADMIN AQUI
         ];
 
+        // Se a validação falhar
         if (!$this->validate($rules)) {
-            return view('auth/register', ['validation' => $this->validator]);
+            // 2. CORREÇÃO: Usamos o serviço diretamente em vez de $this->validator
+            return view('auth/register', [
+                'validation' => Services::validation()
+            ]);
         }
 
         $data = [
@@ -97,9 +102,7 @@ class Auth extends BaseController
         return redirect()->to('/auth/login');
     }
     
-    // Método auxiliar para listar utilizadores (usado pelo admin)
     public function index() {
-        // (Este método será substituído pelo controlador Utilizadores.php se usar o presenter, 
-        // mas mantemos aqui para compatibilidade com rotas antigas se existirem)
+        // Método placeholder
     }
 }

@@ -8,8 +8,9 @@ class PagamentoModel extends Model
 {
     protected $table            = 'Pagamentos';
     protected $primaryKey       = 'id';
-    protected $allowedFields    = ['id_condominio', 'id_utilizador', 'valor', 'data_pagamento', 'descricao'];
+    // ADICIONADO 'status' para permitir marcar como pago
+    protected $allowedFields    = ['id_condominio', 'id_utilizador', 'valor', 'data_pagamento', 'descricao', 'status', 'deleted_at'];
     protected $returnType       = 'array';
-    protected $useSoftDeletes = true; 
-    protected $deletedField = 'deleted_at';
+    protected $useSoftDeletes   = true; 
+    protected $deletedField     = 'deleted_at';
 }
