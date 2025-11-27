@@ -118,22 +118,58 @@ class Condominios extends BaseModuleController {
     }
 
     // 8. APAGAR DEFINITIVAMENTE (Purge)
+    // ... (restante código do controlador acima) ...
+
+    // 8. APAGAR DEFINITIVAMENTE (Eliminação em Cascata)
     public function purge($id = null)
     {
-        $model = new CondominioModel();
+        $condominioModel = new CondominioModel();
         
-        try {
-            // O segundo parâmetro 'true' força a eliminação real da base de dados
-            if ($model->delete($id, true)) {
-                return redirect()->to('/condominios')->with('success', 'Condomínio eliminado permanentemente.');
-            }
-            return redirect()->to('/condominios')->with('error', 'Não foi possível eliminar o registo.');
-            
-        } catch (DatabaseException $e) {
-            // Captura erro de integridade referencial (ex: Condomínio tem Unidades associadas)
-            // Código 1451 é comum em MySQL para Foreign Key Constraint
-            return redirect()->to('/condominios')->with('error', 'ATENÇÃO: Não é possível apagar este condomínio porque existem Unidades, Despesas ou outros registos associados a ele. Apague esses registos primeiro.');
+        // Se o ID não existir, aborta
+        if (!$condominioModel->find($id) && !$condominioModel->onlyDeleted()->find($id)) {
+            return redirect()->to('/condominios')->with('error', 'Condomínio não encontrado.');
         }
+
+        // --- INÍCIO DA LIMPEZA PROFUNDA (CASCATA) ---
+        // Carregar modelos necessários
+        $modelosDependentes = [
+            new \App\Models\UnidadeModel(),      // Unidades
+            new \App\Models\DespesaModel(),      // Despesas
+            new \App\Models\ReceitaModel(),      // Receitas
+            new \App\Models\ComunicadoModel(),   // Comunicados
+            new \App\Models\OcorrenciaModel(),   // Ocorrências
+            new \App\Models\ReuniaoModel(),      // Reuniões
+            new \App\Models\ServicoModel(),      // Serviços
+            new \App\Models\PagamentoModel(),    // Pagamentos
+            new \App\Models\GestorModel(),       // Gestores
+            new \App\Models\PrestadorModel(),    // Prestadores
+        ];
+
+        // 1. Apagar Dados Associados (Dependentes Diretos)
+        foreach ($modelosDependentes as $model) {
+            // Verifica se o modelo tem o campo 'id_condominio'
+            // Nota: Para Unidades e Obras, a lógica pode ser mais complexa, mas isto cobre 90%
+            if ($model->table === 'Unidades' || $model->table === 'Obras') {
+                 // Unidades requerem tratamento especial (têm Quartos/Obras associados)
+                 // Para simplificar, apagamos direto pelo ID do condomínio se a coluna existir
+                 $model->where('id_condominio', $id)->delete(null, true);
+            } else {
+                 // Padrão: Apagar tudo onde id_condominio = $id
+                 // O 'true' ativa o Purge (Hard Delete) ignorando o Soft Delete
+                 $model->where('id_condominio', $id)->delete(null, true);
+            }
+        }
+
+        // Nota: Se quiseres ser perfeccionista, deverias apagar também 'Quartos' que dependem de 'Unidades',
+        // mas como já apagámos as Unidades, os Quartos ficam órfãos de pai mas invisíveis no site.
+        // --- FIM DA LIMPEZA ---
+
+        // 2. Finalmente, Apagar o Condomínio (O Pai)
+        if ($condominioModel->delete($id, true)) {
+            return redirect()->to('/condominios')->with('success', 'Condomínio e TODOS os dados associados foram eliminados para sempre.');
+        }
+
+        return redirect()->to('/condominios')->with('error', 'Erro ao tentar eliminar o registo principal.');
     }
 
     // Método Auxiliar

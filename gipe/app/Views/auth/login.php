@@ -144,7 +144,7 @@
             <h1 class="fw-bold text-white mb-0" style="font-size: 2.5rem; letter-spacing: -1px;">
                 <i class="fa-solid fa-building-shield me-2"></i>GIPE
             </h1>
-            <p class="text-white-50 mt-1">Gestão Inteligente</p>
+            <p class="text-white-50 mt-1">Gestão Imobiliária de Património Empresarial</p>
         </div>
 
         <?php if(session()->getFlashdata('error')):?>
