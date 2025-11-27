@@ -10,4 +10,6 @@ class ReservaModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_condominio', 'id_unidade', 'data_reserva', 'horario_inicio', 'horario_fim', 'descricao'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

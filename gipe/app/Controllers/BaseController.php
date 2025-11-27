@@ -8,41 +8,39 @@ use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Psr\Log\LoggerInterface;
+use App\Models\NotificacaoModel; // Importar Modelo
 
 abstract class BaseController extends Controller
 {
-    /**
-     * Instance of the main Request object.
-     *
-     * @var CLIRequest|IncomingRequest
-     */
     protected $request;
+    protected $helpers = ['form', 'url']; // Helpers globais
 
-    /**
-     * An array of helpers to be loaded automatically upon
-     * class instantiation. These helpers will be available
-     * to all other controllers that extend BaseController.
-     *
-     * @var list<string>
-     */
-    protected $helpers = ['form']; // <--- CORREÇÃO AQUI: Adicionado 'form'
-
-    /**
-     * Be sure to declare properties for any property fetch you initialized.
-     * The creation of dynamic property is deprecated in PHP 8.2.
-     */
-    // protected $session;
-
-    /**
-     * @return void
-     */
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
-        // Do Not Edit This Line
         parent::initController($request, $response, $logger);
 
-        // Preload any models, libraries, etc, here.
+        // Lógica de Notificações Global
+        $session = \Config\Services::session();
+        $notificacoes = [];
+        $totalNotificacoes = 0;
 
-        // E.g.: $this->session = \Config\Services::session();
+        if ($session->get('isLoggedIn')) {
+            $model = new NotificacaoModel();
+            // Buscar notificações não lidas do utilizador logado
+            $notificacoes = $model->where('id_utilizador', $session->get('id'))
+                                  ->where('lida', false) // Assume 0 ou false
+                                  ->orderBy('data_notificacao', 'DESC')
+                                  ->findAll(5); // Busca as 5 mais recentes
+            
+            $totalNotificacoes = $model->where('id_utilizador', $session->get('id'))
+                                       ->where('lida', false)
+                                       ->countAllResults();
+        }
+
+        // Partilhar com todas as views
+        service('renderer')->setData([
+            'notificacoes_topo' => $notificacoes,
+            'total_notificacoes' => $totalNotificacoes
+        ]);
     }
 }

@@ -10,4 +10,6 @@ class ComunicadoModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_condominio', 'titulo', 'mensagem', 'data_publicacao'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

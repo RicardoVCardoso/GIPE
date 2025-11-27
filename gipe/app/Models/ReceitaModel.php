@@ -10,4 +10,6 @@ class ReceitaModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_condominio', 'descricao', 'valor', 'data'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

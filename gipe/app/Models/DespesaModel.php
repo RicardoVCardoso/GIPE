@@ -10,4 +10,6 @@ class DespesaModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_condominio', 'descricao', 'valor', 'data', 'status'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

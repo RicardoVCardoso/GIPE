@@ -10,4 +10,6 @@ class FeedbackModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_utilizador', 'comentario', 'data_feedback'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

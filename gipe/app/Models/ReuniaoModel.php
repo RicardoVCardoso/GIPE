@@ -10,4 +10,6 @@ class ReuniaoModel extends Model
     protected $primaryKey       = 'id';
     protected $allowedFields    = ['id_condominio', 'data_reuniao', 'hora_reuniao', 'local', 'pauta'];
     protected $returnType       = 'array';
+    protected $useSoftDeletes = true; 
+    protected $deletedField = 'deleted_at';
 }

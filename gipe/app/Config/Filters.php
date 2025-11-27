@@ -8,7 +8,9 @@ use CodeIgniter\Filters\DebugToolbar;
 use CodeIgniter\Filters\Honeypot;
 use CodeIgniter\Filters\InvalidChars;
 use CodeIgniter\Filters\SecureHeaders;
-use App\Filters\AuthGuard; // Importar a classe
+// IMPORTANTE: Importar as nossas classes aqui
+use App\Filters\AuthGuard;
+use App\Filters\RoleGuard;
 
 class Filters extends BaseConfig
 {
@@ -18,23 +20,22 @@ class Filters extends BaseConfig
         'honeypot'      => Honeypot::class,
         'invalidchars'  => InvalidChars::class,
         'secureheaders' => SecureHeaders::class,
-        'authGuard'     => AuthGuard::class, // <--- ADICIONADO AQUI
+        // Registar os nossos aliases
+        'authGuard'     => AuthGuard::class,
+        'roleGuard'     => RoleGuard::class,
     ];
 
     public array $globals = [
         'before' => [
             // 'honeypot',
             // 'csrf',
-            // 'invalidchars',
         ],
         'after' => [
             'toolbar',
             // 'honeypot',
-            // 'secureheaders',
         ],
     ];
 
     public array $methods = [];
-
     public array $filters = [];
 }

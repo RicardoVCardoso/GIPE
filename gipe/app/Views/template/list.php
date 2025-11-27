@@ -1,57 +1,90 @@
 <?= $this->extend('layouts/main') ?>
 <?= $this->section('content') ?>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-4 d-flex justify-content-between align-items-center border-bottom">
+<?php 
+    $tipo = session()->get('tipo'); 
+    $canManage = ($tipo === 'admin' || $tipo === 'gestor');
+    if ($route === 'ocorrencias' && $tipo === 'morador') $canManage = true; 
+    
+    // Contar itens no lixo para mostrar no botão
+    $trashCount = isset($trashData) ? count($trashData) : 0;
+?>
+
+<div class="card shadow-lg border-0 overflow-hidden">
+    <div class="card-header bg-white py-4 px-4 border-bottom d-flex justify-content-between align-items-center">
         <div>
             <h5 class="m-0 fw-bold text-primary"><?= $title ?></h5>
-            <small class="text-muted">Gerir registos do sistema</small>
+            <span class="text-muted small">Total ativos: <?= count($data) ?></span>
         </div>
-        <a href="<?= base_url($route . '/new') ?>" class="btn btn-primary shadow-sm rounded-3 px-4">
-            <i class="fa-solid fa-plus me-2"></i> Novo
-        </a>
+        
+        <div class="d-flex gap-2">
+            <?php if(($tipo === 'admin' || $tipo === 'gestor')): ?>
+                <button type="button" class="btn btn-outline-secondary shadow-sm px-3 rounded-3 position-relative" data-bs-toggle="modal" data-bs-target="#trashModal">
+                    <i class="fa-solid fa-box-archive me-2"></i> Arquivo
+                    <?php if($trashCount > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <?= $trashCount ?>
+                        </span>
+                    <?php endif; ?>
+                </button>
+            <?php endif; ?>
+
+            <?php if($canManage || $route === 'reservas'): ?>
+            <a href="<?= base_url($route . '/new') ?>" class="btn btn-primary shadow-sm px-4 rounded-3">
+                <i class="fa-solid fa-plus me-2"></i> Novo
+            </a>
+            <?php endif; ?>
+        </div>
     </div>
+
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover datatable align-middle w-100 mb-0">
+            <table class="table table-hover align-middle w-100 mb-0 datatable">
                 <thead class="bg-light">
                     <tr>
-                        <th class="ps-4 py-3">ID</th>
-                        <?php foreach($columns as $label): ?>
-                            <th class="py-3"><?= $label ?></th>
+                        <th class="ps-4 py-3 text-uppercase text-muted small fw-bold">ID</th>
+                        <?php foreach($columns as $key => $label): ?>
+                            <th class="py-3 text-uppercase text-muted small fw-bold"><?= $label ?></th>
                         <?php endforeach; ?>
-                        <th class="text-end pe-4 py-3">Ações</th>
+                        <?php if($canManage): ?><th class="text-end pe-4 py-3 text-uppercase text-muted small fw-bold">Ações</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach($data as $row): ?>
                     <tr>
                         <td class="ps-4 fw-bold text-secondary">#<?= $row['id'] ?></td>
-                        
                         <?php foreach($columns as $key => $label): ?>
                             <td>
                                 <?php 
-                                    // Pequena melhoria visual para status/tipos
                                     $val = esc($row[$key] ?? '-');
-                                    if($key == 'status' || $key == 'tipo') {
-                                        echo '<span class="badge bg-light text-dark border">'.strtoupper($val).'</span>';
-                                    } else {
-                                        echo $val;
-                                    }
+                                    if ($key == 'status' || $key == 'lida'): 
+                                        $badgeClass = 'bg-secondary';
+                                        if(in_array($val, ['ativo', 'paga', 'resolvida', '1'])) $badgeClass = 'bg-success';
+                                        if(in_array($val, ['pendente', '0'])) $badgeClass = 'bg-warning text-dark';
+                                        if(in_array($val, ['bloqueado', 'rejeitada'])) $badgeClass = 'bg-danger';
+                                        echo "<span class='badge {$badgeClass} bg-opacity-75 rounded-pill px-3'>".strtoupper($val)."</span>";
+                                    else: echo $val; endif; 
                                 ?>
                             </td>
                         <?php endforeach; ?>
                         
+                        <?php if($canManage): ?>
                         <td class="text-end pe-4">
-                            <a href="<?= base_url($route . '/edit/' . $row['id']) ?>" class="btn btn-sm btn-light text-primary me-1" title="Editar">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </a>
-                            
-                            <button class="btn btn-sm btn-light text-danger" 
-                                    onclick="confirmAction('<?= base_url($route) ?>', <?= $row['id'] ?>)">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
+                            <div class="d-flex justify-content-end gap-2">
+                                <?php if(isset($row['status']) && $row['status'] === 'pendente'): ?>
+                                    <a href="<?= base_url($route.'/status/'.$row['id'].'/ativo') ?>" class="btn btn-sm btn-success text-white"><i class="fa-solid fa-check"></i></a>
+                                <?php endif; ?>
+                                
+                                <a href="<?= base_url($route . '/edit/' . $row['id']) ?>" class="btn btn-sm btn-light text-primary border"><i class="fa-solid fa-pen"></i></a>
+                                
+                                <?php if($tipo !== 'morador'): ?>
+                                    <button class="btn btn-sm btn-light text-danger border" onclick="confirmDelete('<?= base_url($route) ?>', <?= $row['id'] ?>)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </td>
+                        <?php endif; ?>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -60,29 +93,72 @@
     </div>
 </div>
 
+<div class="modal fade" id="trashModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-danger bg-opacity-10 border-bottom-0 py-3">
+                <h5 class="modal-title text-danger fw-bold"><i class="fa-solid fa-box-archive me-2"></i> Arquivo de <?= $title ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 bg-light">
+                <?php if(empty($trashData)): ?>
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-regular fa-folder-open fs-1 mb-3 opacity-25 d-block"></i>
+                        O arquivo está vazio.
+                    </div>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle w-100 mb-0">
+                            <thead class="bg-white sticky-top">
+                                <tr>
+                                    <th class="ps-4">ID</th>
+                                    <?php foreach($columns as $label): ?><th><?= $label ?></th><?php endforeach; ?>
+                                    <th class="text-end pe-4">Recuperar / Eliminar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach($trashData as $trashRow): ?>
+                                <tr class="bg-white border-bottom">
+                                    <td class="ps-4 text-muted">#<?= $trashRow['id'] ?></td>
+                                    <?php foreach($columns as $k => $l): ?>
+                                        <td class="text-muted text-decoration-line-through"><?= esc($trashRow[$k] ?? '-') ?></td>
+                                    <?php endforeach; ?>
+                                    <td class="text-end pe-4">
+                                        <a href="<?= base_url($route . '/restore/' . $trashRow['id']) ?>" class="btn btn-sm btn-success text-white me-2" title="Restaurar">
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        </a>
+                                        <a href="<?= base_url($route . '/purge/' . $trashRow['id']) ?>" class="btn btn-sm btn-danger text-white" onclick="return confirm('ATENÇÃO: Apagar para sempre?');" title="Eliminar Definitivo">
+                                            <i class="fa-solid fa-xmark"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <div class="modal-footer border-top-0 bg-white rounded-bottom-4">
+                <button type="button" class="btn btn-light text-muted" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-function confirmAction(baseUrl, id) {
+function confirmDelete(baseUrl, id) {
     Swal.fire({
-        title: 'O que deseja fazer?',
-        text: "Pode desativar (recuperável) ou apagar para sempre.",
+        title: 'Arquivar Registo?',
+        text: "O item será movido para o Arquivo e deixará de estar visível.",
         icon: 'warning',
         showCancelButton: true,
-        showDenyButton: true,
-        confirmButtonColor: '#f59e0b', // Amarelo para Desativar
-        denyButtonColor: '#ef4444',    // Vermelho para Apagar
-        cancelButtonColor: '#94a3b8',  // Cinza para Cancelar
-        confirmButtonText: '<i class="fa-solid fa-power-off"></i> Desativar',
-        denyButtonText: '<i class="fa-solid fa-trash"></i> Apagar Tudo',
-        cancelButtonText: 'Cancelar',
-        background: 'rgba(255, 255, 255, 0.98)',
-        backdrop: `rgba(0,0,123,0.1)`
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Sim, arquivar',
+        cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
-            // Ação: Desativar (Soft Delete)
             window.location.href = baseUrl + '/delete/' + id;
-        } else if (result.isDenied) {
-            // Ação: Apagar Permanente (Hard Delete)
-            window.location.href = baseUrl + '/purge/' + id;
         }
     });
 }
